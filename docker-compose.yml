@@ -1,0 +1,92 @@
+name: lumi
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       lumi_dev
+      POSTGRES_USER:     lumi
+      POSTGRES_PASSWORD: lumi_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - lumi_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lumi -d lumi_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Alembic migrations (runs once then exits) ─────────────────────────────
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    command: alembic upgrade head
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://lumi:lumi_dev_password@db:5432/lumi_dev
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  # ── FastAPI backend ───────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://lumi:lumi_dev_password@db:5432/lumi_dev
+      CORS_ORIGINS:  "http://localhost:3000"
+      DEBUG:         "true"
+      APP_ENV:       development
+      COOKIE_SECURE: "false"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app          # hot reload
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  # ── Next.js frontend ──────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app         # hot reload
+      - /app/node_modules       # prevent host node_modules override
+      - /app/.next              # prevent host .next override
+    depends_on:
+      - backend
+
+  # ── pgAdmin (optional DB GUI) ─────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL:    admin@lumi.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    profiles:
+      - tools    # only starts with: docker compose --profile tools up
+
+volumes:
+  lumi_postgres_data:

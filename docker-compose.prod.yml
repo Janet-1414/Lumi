@@ -1,0 +1,53 @@
+name: lumi-prod
+
+# Production override — used by Railway deployment.
+# Extends docker-compose.yml with production-specific settings.
+# Run with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+services:
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile       # multi-stage production build
+    restart: always
+    environment:
+      APP_ENV:       production
+      DEBUG:         "false"
+      COOKIE_SECURE: "true"        # requires HTTPS in production
+    # No volume mounts in production — code is baked into image
+    volumes: []
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile       # multi-stage Next.js standalone build
+    restart: always
+    environment:
+      NODE_ENV: production
+    volumes: []
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  db:
+    restart: always
+    # In production on Railway, the DB is a managed service.
+    # This service is here for docker-compose completeness only.
+    # Railway connects via DATABASE_URL env var.
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # pgAdmin not included in production
+  pgadmin:
+    profiles:
+      - never   # never starts in production compose

@@ -1,0 +1,84 @@
+name: lumi-test
+
+# Isolated test environment — used by GitHub Actions CI.
+# Spins up a separate test DB, runs all tests, then exits.
+#
+# Usage:
+#   docker compose -f docker-compose.test.yml up --abort-on-container-exit
+#   docker compose -f docker-compose.test.yml down -v
+
+services:
+
+  # ── Test database (completely separate from dev DB) ───────────────────────
+  db-test:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB:       lumi_test
+      POSTGRES_USER:     lumi_test
+      POSTGRES_PASSWORD: lumi_test_password
+    ports:
+      - "5433:5432"     # different port to avoid conflict with dev DB
+    healthcheck:
+      test:     ["CMD-SHELL", "pg_isready -U lumi_test -d lumi_test"]
+      interval: 5s
+      timeout:  5s
+      retries:  5
+    tmpfs:
+      - /var/lib/postgresql/data   # in-memory — wiped after tests
+
+  # ── Run Alembic migrations against test DB ────────────────────────────────
+  migrate-test:
+    build:
+      context:    ./backend
+      dockerfile: Dockerfile.dev
+    command: alembic upgrade head
+    environment:
+      DATABASE_URL: postgresql+asyncpg://lumi_test:lumi_test_password@db-test:5432/lumi_test
+      APP_ENV:      test
+    depends_on:
+      db-test:
+        condition: service_healthy
+    restart: "no"
+
+  # ── Backend tests ─────────────────────────────────────────────────────────
+  backend-test:
+    build:
+      context:    ./backend
+      dockerfile: Dockerfile.dev
+    command: >
+      uv run pytest
+        --cov=app
+        --cov-report=term-missing
+        --cov-report=xml:/coverage/coverage.xml
+        --cov-fail-under=90
+        -v
+    environment:
+      DATABASE_URL:    postgresql+asyncpg://lumi_test:lumi_test_password@db-test:5432/lumi_test
+      APP_ENV:         test
+      JWT_SECRET_KEY:  test-secret-key-not-for-production
+      OPENAI_API_KEY:  test-key-mocked-in-tests
+      COOKIE_SECURE:   "false"
+      CORS_ORIGINS:    "http://localhost:3000"
+    volumes:
+      - ./backend:/app
+      - ./coverage:/coverage
+    depends_on:
+      db-test:
+        condition: service_healthy
+      migrate-test:
+        condition: service_completed_successfully
+    restart: "no"
+
+  # ── Frontend tests ────────────────────────────────────────────────────────
+  frontend-test:
+    build:
+      context:    ./frontend
+      dockerfile: Dockerfile.dev
+    command: npm test -- --coverage --watchAll=false --ci
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend-test:8000/api/v1
+      CI: "true"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    restart: "no"
