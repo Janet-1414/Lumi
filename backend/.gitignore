@@ -1,0 +1,34 @@
+# backend/.gitignore
+# Extra backend-specific ignores on top of root .gitignore
+
+# Virtual environment
+.venv/
+
+# Environment variables — NEVER commit
+.env
+
+# uv build cache
+.uv/
+
+# Compiled Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Test coverage
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+
+# MyPy cache
+.mypy_cache/
+
+# Ruff cache
+.ruff_cache/
+
+# Distribution
+dist/
+build/
+*.egg-info/
+*.whl
