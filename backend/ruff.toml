@@ -1,0 +1,21 @@
+# ruff.toml — Lumi backend linter configuration
+line-length    = 100
+target-version = "py311"
+src            = ["app", "tests"]
+
+[lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "ANN", "RET", "PTH"]
+ignore = [
+  "ANN101",  # self type annotation
+  "ANN102",  # cls type annotation
+  "ANN401",  # Any type
+  "RET504",  # Unnecessary assignment before return
+  "SIM108",  # Use ternary operator
+]
+
+[lint.isort]
+known-first-party = ["app"]
+
+[lint.per-file-ignores]
+"tests/**" = ["ANN", "S101"]    # No type annotations required in tests
+"migrations/**" = ["ANN", "E"]  # Alembic generated files
