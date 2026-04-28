@@ -2,7 +2,6 @@
 name = "lumi-backend"
 version = "0.1.0"
 description = "Lumi — AI-powered financial wellness backend"
-readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     # Web framework
@@ -53,6 +52,7 @@ dev = [
     "mypy>=1.10.0",
     "types-python-jose>=3.3.4",
     "types-passlib>=1.7.7",
+    "aiosqlite>=0.20.0", 
 ]
 
 [build-system]
@@ -61,7 +61,7 @@ build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "SIM", "ANN"]
@@ -79,3 +79,6 @@ ignore_missing_imports = true
 asyncio_mode = "auto"
 testpaths    = ["tests"]
 addopts      = "--cov=app --cov-report=term-missing --cov-fail-under=90"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
