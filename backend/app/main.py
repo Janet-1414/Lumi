@@ -1,6 +1,5 @@
 """
 app/main.py
-
 FastAPI application factory.
 Uses the factory pattern so the app can be created fresh in tests.
 """
@@ -15,10 +14,9 @@ from fastapi.responses import JSONResponse
 
 from app.config import get_settings
 from app.exceptions.base import LumiBaseException
-from app.routers import auth
 
 settings = get_settings()
-logger = structlog.get_logger()
+logger   = structlog.get_logger()
 
 
 # ── Lifespan (startup / shutdown) ─────────────────────────────────────────────
@@ -34,10 +32,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title=settings.APP_NAME,
+        title="Lumi",
         description="AI-powered financial wellness for African youth",
         version="0.1.0",
-        docs_url="/docs" if not settings.is_production else None,
+        docs_url="/docs"  if not settings.is_production else None,
         redoc_url="/redoc" if not settings.is_production else None,
         lifespan=lifespan,
     )
@@ -68,17 +66,36 @@ def create_app() -> FastAPI:
         )
 
     # ── Routers ───────────────────────────────────────────────────────────────
-    app.include_router(auth.router, prefix=settings.API_PREFIX)
-    # Future routers:
-    # app.include_router(transactions.router, prefix=settings.API_PREFIX)
-    # app.include_router(savings.router, prefix=settings.API_PREFIX)
-    # app.include_router(chat.router, prefix=settings.API_PREFIX)
-    # app.include_router(scanner.router, prefix=settings.API_PREFIX)
+    from app.routers import auth
+    from app.routers import users
+    from app.routers import scanner
+    from app.routers import transactions
+    from app.routers import savings
+    from app.routers import dashboard
+    from app.routers import reports
+    from app.routers import community
+    from app.routers import chat
+    from app.routers import profile
+
+    app.include_router(auth.router,         prefix=settings.API_PREFIX)
+    app.include_router(users.router,        prefix=settings.API_PREFIX)
+    app.include_router(scanner.router,      prefix=settings.API_PREFIX)
+    app.include_router(transactions.router, prefix=settings.API_PREFIX)
+    app.include_router(savings.router,      prefix=settings.API_PREFIX)
+    app.include_router(dashboard.router,    prefix=settings.API_PREFIX)
+    app.include_router(reports.router,      prefix=settings.API_PREFIX)
+    app.include_router(community.router,    prefix=settings.API_PREFIX)
+    app.include_router(chat.router,         prefix=settings.API_PREFIX)
+    app.include_router(profile.router,      prefix=settings.API_PREFIX)
 
     # ── Health check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["System"])
     async def health() -> dict:
-        return {"status": "ok", "app": settings.APP_NAME, "env": settings.APP_ENV}
+        return {
+            "status": "ok",
+            "app":    "Lumi",
+            "env":    settings.APP_ENV,
+        }
 
     return app
 

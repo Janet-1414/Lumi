@@ -1,6 +1,6 @@
 """app/ai/community_pulse.py — Weekly anonymous collective savings summary."""
 
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from app.config import get_settings
 

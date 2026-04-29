@@ -6,7 +6,7 @@ Uses LangChain to produce a readable, personalised narrative
 from the user's actual spending data.
 """
 
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
 from app.config import get_settings

@@ -1,7 +1,7 @@
 """app/ai/savings_coach.py — AI savings goal coach."""
 
 from app.config import get_settings
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
 settings = get_settings()

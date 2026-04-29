@@ -3,7 +3,7 @@ app/ai/insights.py — Spending insight generator.
 Produces the AI insight banner shown on Dashboard and Transactions page.
 """
 
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from app.config import get_settings
 

@@ -5,7 +5,7 @@ MoneyPersonalityAI — analyses quiz answers and assigns a money personality typ
 This is Lumi's onboarding AI feature — runs once at signup.
 """
 
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from app.config import get_settings
 from app.utils.enums import MoneyPersonality

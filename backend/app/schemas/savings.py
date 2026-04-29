@@ -5,7 +5,7 @@ Pydantic v2 schemas for savings goals.
 """
 
 import uuid
-from datetime import date, datetime
+from datetime import date as Date, datetime
 
 from pydantic import BaseModel, Field, field_validator, computed_field
 
@@ -15,7 +15,7 @@ class SavingsGoalCreate(BaseModel):
     target_amount: float = Field(..., gt=0)
     current_amount: float = Field(default=0.0, ge=0)
     currency:      str   = Field(default="UGX", max_length=10)
-    deadline:      date | None = None
+    deadline:      Date | None = None
     emoji:         str   = Field(default="🎯", max_length=10)
 
     @field_validator("currency")
@@ -28,7 +28,7 @@ class SavingsGoalUpdate(BaseModel):
     name:           str | None   = Field(None, min_length=1, max_length=200)
     target_amount:  float | None = Field(None, gt=0)
     current_amount: float | None = Field(None, ge=0)
-    deadline:       date | None  = None
+    deadline:       Date | None  = None
     emoji:          str | None   = Field(None, max_length=10)
 
 
@@ -42,7 +42,7 @@ class SavingsGoalResponse(BaseModel):
     target_amount:  float
     current_amount: float
     currency:       str
-    deadline:       date | None
+    deadline:       Date | None
     emoji:          str
     is_completed:   bool
     progress_pct:   float

@@ -22,10 +22,10 @@ Observability: every call is traced in LangSmith under the "lumi" project.
 
 import json
 import re
-from datetime import date, datetime
+from datetime import date as DateType
 from typing import Any
 
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field, field_validator
 
@@ -43,14 +43,14 @@ class ScannedTransaction(BaseModel):
     Structured output from the SMS/receipt scanner.
     Validated by Pydantic before being saved to the DB.
     """
-    amount:      float                = Field(..., gt=0, description="Transaction amount")
-    type:        TransactionType      = Field(..., description="income or expense")
-    category:    TransactionCategory  = Field(..., description="Best matching category")
-    description: str                  = Field(..., min_length=2, max_length=500)
-    date:        date                 = Field(..., description="Transaction date")
-    currency:    str                  = Field(default="UGX")
-    confidence:  float                = Field(default=1.0, ge=0.0, le=1.0)
-    raw_text:    str                  = Field(default="", description="Original SMS text")
+    amount:           float                = Field(..., gt=0, description="Transaction amount")
+    type:             TransactionType      = Field(..., description="income or expense")
+    category:         TransactionCategory  = Field(..., description="Best matching category")
+    description:      str                  = Field(..., min_length=2, max_length=500)
+    transaction_date: DateType             = Field(..., description="Transaction date")
+    currency:         str                  = Field(default="UGX")
+    confidence:       float                = Field(default=1.0, ge=0.0, le=1.0)
+    raw_text:         str                  = Field(default="", description="Original SMS text")
 
     @field_validator("currency")
     @classmethod
@@ -61,6 +61,11 @@ class ScannedTransaction(BaseModel):
     @classmethod
     def clean_description(cls, v: str) -> str:
         return v.strip()
+
+    @property
+    def date(self) -> DateType:
+        """Convenience alias so callers can still use .date"""
+        return self.transaction_date
 
 
 # ─── Extraction prompt ────────────────────────────────────────────────────────
@@ -82,7 +87,7 @@ Extract and return ONLY valid JSON with these exact fields:
   "type": <"income" or "expense">,
   "category": <one of: food, transport, shopping, utilities, health, education, savings, income, mobile_money, other>,
   "description": <short human-readable description, max 100 chars>,
-  "date": <YYYY-MM-DD, use today if not found: {today}>,
+  "transaction_date": <YYYY-MM-DD, use today if not found: {today}>,
   "currency": <"UGX" default, or detected currency code>,
   "confidence": <0.0 to 1.0, how confident you are in the extraction>
 }}
@@ -125,9 +130,8 @@ class SMSScanner:
     def __init__(self) -> None:
         self._llm = ChatOpenAI(
             model="gpt-4o-mini",
-            temperature=0,              # deterministic extraction
+            temperature=0,
             api_key=settings.OPENAI_API_KEY,
-            # LangSmith tracing is configured via env vars automatically
         )
         self._chain = EXTRACTION_PROMPT | self._llm
 
@@ -152,7 +156,7 @@ class SMSScanner:
         try:
             response = await self._chain.ainvoke({
                 "text":  cleaned,
-                "today": date.today().isoformat(),
+                "today": DateType.today().isoformat(),
             })
 
             raw_content = response.content
@@ -189,7 +193,6 @@ class SMSScanner:
                 result = await self.scan(text)
                 results.append(result)
             except ScannerException:
-                # Skip unparseable messages silently
                 continue
 
         return results
@@ -208,14 +211,12 @@ class SMSScanner:
         Extract JSON from the model response.
         Handles cases where the model wraps output in markdown code fences.
         """
-        # Strip markdown fences if present
         content = re.sub(r"^```(?:json)?\s*", "", content.strip())
         content = re.sub(r"\s*```$",           "", content.strip())
         return json.loads(content)
 
 
 # ─── Singleton ────────────────────────────────────────────────────────────────
-# Instantiate once so the LLM client is reused across requests
 
 _scanner_instance: SMSScanner | None = None
 

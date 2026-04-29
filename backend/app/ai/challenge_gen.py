@@ -1,7 +1,7 @@
 """app/ai/challenge_gen.py — Personalised savings challenge generator."""
 
 from app.config import get_settings
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 import json, re
 
