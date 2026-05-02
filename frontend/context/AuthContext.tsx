@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       const res = await apiClient.getMe()
-      setUser(res.data ?? null)
+      setUser(res ?? null)
     } catch {
       setUser(null)
     } finally {
@@ -40,6 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try { await apiClient.logout() } catch { /* ignore */ }
+    localStorage.removeItem("lumi_token")
+    apiClient.setToken(null)
     setUser(null)
     window.location.href = '/auth/login'
   }, [])

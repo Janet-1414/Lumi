@@ -118,7 +118,8 @@ class UserResponse(BaseModel):
 
 class AuthResponse(BaseModel):
     user:    UserResponse
-    message: str
+    message:      str
+    access_token: str | None = None
 
 
 class MessageResponse(BaseModel):

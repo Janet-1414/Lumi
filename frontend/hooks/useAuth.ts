@@ -82,9 +82,9 @@ export function useAuth() {
   const login = async (payload: LoginRequest): Promise<boolean> => {
     setLoading()
     try {
-      await apiClient.login(payload)
+      const res = await apiClient.login(payload)
+      if (res?.data?.access_token) apiClient.setToken(res.data.access_token)
       setDone()
-      router.push('/dashboard')
       return true
     } catch (err: unknown) {
       setError(extractError(err) ?? 'Invalid email or password.')

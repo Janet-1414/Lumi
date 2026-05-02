@@ -23,7 +23,7 @@ _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(plain: str) -> str:
     """Hash a plaintext password with bcrypt."""
-    return _pwd_context.hash(plain)
+    return _pwd_context.hash(plain[:72])
 
 
 def verify_password(plain: str, hashed: str) -> bool:

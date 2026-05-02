@@ -26,7 +26,7 @@ const config: Config = {
         // ── Semantic ──
         teal:             '#1D9E75',
         'teal-dim':       '#0F6E56',
-        lumi-red:         '#D85A30',
+        'lumi-red':         '#D85A30',
         purple:           '#7F77DD',
         blue:             '#85B7EB',
         pink:             '#ED93B1',

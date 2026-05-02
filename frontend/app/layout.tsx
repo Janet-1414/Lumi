@@ -34,7 +34,6 @@ export const metadata: Metadata = {
     icon:  '/lumi-icon.png',
     apple: '/lumi-icon.png',
   },
-  manifest: '/manifest.json',
 }
 
 export const viewport: Viewport = {

@@ -1,13 +1,10 @@
 """
 app/dependencies.py
-
 FastAPI dependency functions shared across all routers.
 """
-
-from fastapi import Cookie, Depends
+from fastapi import Cookie, Depends, Request
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.database import get_db
 from app.exceptions.base import TokenExpiredException, TokenInvalidException
 from app.models.user import User
@@ -16,28 +13,27 @@ from app.utils.security import decode_token
 
 
 async def get_current_user(
+    request: Request,
     lumi_access_token: str | None = Cookie(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    """
-    FastAPI dependency — extracts and validates the JWT from the HTTP-only cookie.
-    Raises 401 if the token is missing, invalid, or expired.
+    # Try Bearer token from Authorization header first, then fall back to cookie
+    token = None
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+    elif lumi_access_token:
+        token = lumi_access_token
 
-    Usage in routes:
-        @router.get("/me")
-        async def me(user: User = Depends(get_current_user)):
-            ...
-    """
-    if not lumi_access_token:
+    if not token:
         raise TokenInvalidException()
 
     try:
-        payload = decode_token(lumi_access_token)
+        payload = decode_token(token)
         user_id: str = payload.get("sub", "")
         if not user_id:
             raise TokenInvalidException()
     except JWTError as exc:
-        # Distinguish expired from invalid
         if "expired" in str(exc).lower():
             raise TokenExpiredException() from exc
         raise TokenInvalidException() from exc
@@ -46,7 +42,6 @@ async def get_current_user(
     user = await repo.get_by_id(user_id)  # type: ignore[arg-type]
     if not user:
         raise TokenInvalidException()
-
     return user
 
 

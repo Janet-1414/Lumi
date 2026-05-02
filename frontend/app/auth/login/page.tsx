@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { PasswordInput } from '@/components/auth/PasswordInput'
 import { useAuth } from '@/hooks/useAuth'
+import { useRouter } from 'next/navigation'
+import { useAuth as useAuthContext } from '@/context/AuthContext'
 import { isValidEmail } from '@/lib/validators'
 import type { LoginFormValues } from '@/types/auth.types'
 
@@ -20,6 +22,9 @@ function validate(values: LoginFormValues): FormErrors {
 
 export default function LoginPage() {
   const { login, loading, error: apiError } = useAuth()
+  const router = useRouter()
+  const { refresh } = useAuthContext()
+  
 
   const [values, setValues] = useState<LoginFormValues>({
     email: '',
@@ -41,11 +46,12 @@ export default function LoginPage() {
     const errs = validate(values)
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
 
-    await login({
+    const ok = await login({
       email: values.email.trim().toLowerCase(),
       password: values.password,
       remember_me: values.remember_me,
     })
+    if (ok) { await refresh().then(() => router.push("/dashboard")) }
   }
 
   return (

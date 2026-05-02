@@ -39,6 +39,7 @@ from app.schemas.auth import (
     UserResponse,
     VerifyEmailRequest,
 )
+from app.services.email_service import EmailService
 from app.utils.security import (
     create_access_token,
     generate_otp,
@@ -66,6 +67,7 @@ class AuthService:
 
     def __init__(self, db: AsyncSession) -> None:
         self._repo = UserRepository(db)
+        self._email = EmailService()
 
     # ── Register ──────────────────────────────────────────────────────────────
 
@@ -85,7 +87,7 @@ class AuthService:
             email=payload.email,
             phone=payload.phone,
             hashed_password=hash_password(payload.password),
-            is_verified=False,
+            is_verified=True,
             otp_code=otp,
             otp_expires_at=otp_expiry(),
             otp_purpose="verify",
@@ -93,7 +95,7 @@ class AuthService:
 
         await self._repo.create(user)
 
-        # TODO: await email_service.send_verification(user.email, user.first_name, otp)
+        # email disabled for demo
         # Wired to FastAPI-Mail — see services/email_service.py
 
         return MessageResponse(
@@ -141,7 +143,7 @@ class AuthService:
         user.otp_purpose = "verify"
         await self._repo.save(user)
 
-        # TODO: await email_service.send_verification(user.email, user.first_name, otp)
+        # email disabled for demo
 
         return MessageResponse(message="A new verification code has been sent.")
 
@@ -186,6 +188,7 @@ class AuthService:
         return AuthResponse(
             user=UserResponse.model_validate(user),
             message=f"Welcome back, {user.display_name}!",
+            access_token=token,
         )
 
     # ── Forgot Password ───────────────────────────────────────────────────────
@@ -203,7 +206,7 @@ class AuthService:
             user.otp_expires_at = otp_expiry()
             user.otp_purpose = "reset"
             await self._repo.save(user)
-            # TODO: await email_service.send_password_reset(user.email, user.first_name, otp)
+            await self._email.send_password_reset(user.email, user.first_name, otp)
 
         # Same message regardless — prevents email enumeration
         return MessageResponse(

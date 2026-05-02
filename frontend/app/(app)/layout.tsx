@@ -1,17 +1,8 @@
 'use client'
 
-/**
- * app/(app)/layout.tsx
- *
- * Auth guard layout that wraps every protected route.
- * Redirects unauthenticated users to /auth/login.
- *
- * Place this file at: frontend/app/(app)/layout.tsx
- */
-
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth }   from '@/context/AuthContext'
+import { useRouter, usePathname } from 'next/navigation'
+import { useAuth } from '@/context/AuthContext'
 
 export default function AppLayout({
   children,
@@ -20,6 +11,7 @@ export default function AppLayout({
 }) {
   const { user, loading } = useAuth()
   const router            = useRouter()
+  const pathname          = usePathname()
 
   useEffect(() => {
     if (!loading && !user) {
@@ -27,7 +19,6 @@ export default function AppLayout({
     }
   }, [user, loading, router])
 
-  // Show nothing while checking auth — prevents flash of protected content
   if (loading) {
     return (
       <div style={{

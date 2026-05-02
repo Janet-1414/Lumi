@@ -97,7 +97,7 @@ export default function SignupPage() {
     if (ok) {
       // Pass email to verification page via query param
       router.push(
-        `/auth/verify-email?email=${encodeURIComponent(values.email.trim())}`,
+        `/auth/login`,
       )
     }
   }

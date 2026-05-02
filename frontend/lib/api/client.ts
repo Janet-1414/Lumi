@@ -21,9 +21,24 @@ import type {
 } from '@/types/auth.types'
 
 class ApiClient {
+  private token: string | null = null
+
   private readonly client: AxiosInstance
 
+  setToken(token: string | null) {
+    this.token = token
+    if (typeof window !== "undefined") {
+      if (token) localStorage.setItem("lumi_token", token)
+      else localStorage.removeItem("lumi_token")
+    }
+  }
+  getToken() { return this.token }
+
   constructor() {
+    if (typeof window !== "undefined") {
+      const t = localStorage.getItem("lumi_token")
+      if (t) this.token = t
+    }
     this.client = axios.create({
       baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1',
       withCredentials: true,          // send HTTP-only cookies automatically
@@ -34,10 +49,20 @@ class ApiClient {
       },
     })
 
+    this.attachRequestInterceptor()
     this.attachResponseInterceptor()
   }
 
   // ─── Interceptors ──────────────────────────────────────────────────────────
+
+  private attachRequestInterceptor(): void {
+    this.client.interceptors.request.use((config) => {
+      if (this.token) {
+        config.headers.Authorization = `Bearer ${this.token}`
+      }
+      return config
+    })
+  }
 
   private attachResponseInterceptor(): void {
     this.client.interceptors.response.use(
@@ -46,7 +71,7 @@ class ApiClient {
         if (error.response?.status === 401) {
           // JWT expired or missing — send user to login
           if (typeof window !== 'undefined') {
-            window.location.href = '/auth/login'
+            if (!window.location.pathname.startsWith('/auth') && window.location.pathname !== '/') window.location.href = '/auth/login'
           }
         }
         return Promise.reject(error)
